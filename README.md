@@ -6,9 +6,7 @@ When you upload a file, CloudXL automatically splits it into chunks and distribu
 
 Think of it as a super-cloud built from all your free storage scattered across the internet.
 
-Upload a file? CloudXL **splits it into chunks** and spreads the pieces across your linked accounts.  
-Download it? CloudXL **reassembles it seamlessly** like it was never split.  
-Result? A **super-cloud** powered by all your free space. 🚀  
+A **super-cloud** powered by all your free space. 🚀  
 
 ---
 

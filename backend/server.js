@@ -25,7 +25,7 @@ app.use(session({
 
 // Enable CORS for all routes
 app.use(cors({
-  origin: 'https://cloud-xl.vercel.app/', // Your frontend URL
+  origin: 'https://cloud-xl.vercel.app', // Your frontend URL
   credentials: true
 }))
 

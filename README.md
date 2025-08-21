@@ -1,6 +1,12 @@
-# CloudStore - Distributed File Storage System
+# 🌩️ CloudXL — One Cloud to Rule Them All  
 
-A full-stack application that splits uploaded files into parts and distributes them across multiple cloud storage providers (Google Drive, Dropbox) for redundancy and security.
+CloudXL is a full-stack app that frees you from storage limits by **pooling multiple free cloud storage accounts** (Google Drive, Dropbox).  
+
+Upload a file? ✅ CloudXL **splits it into chunks** and spreads the pieces across your linked accounts.  
+Download it? ✅ CloudXL **reassembles it seamlessly** like it was never split.  
+Result? A **super-cloud** powered by all your free space. 🚀  
+
+---
 
 ## Features
 

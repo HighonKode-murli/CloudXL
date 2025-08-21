@@ -72,7 +72,7 @@ router.get("/callback/google", requireAuthFromSession, async (req, res, next) =>
     await user.save();
     // Clear session and redirect to frontend
     req.session.destroy();
-    res.redirect('http://localhost:5173/dashboard?connected=google');
+    res.redirect('https://cloud-xl.vercel.app/dashboard?connected=google');
   } catch (err) {
     next(err);
   }
@@ -155,7 +155,7 @@ router.get("/callback/dropbox", requireAuthFromSession, async (req, res, next) =
     await user.save();
     // Clear session and redirect to frontend
     req.session.destroy();
-    res.redirect('http://localhost:5173/dashboard?connected=dropbox');
+    res.redirect('https://cloud-xl.vercel.app/dashboard?connected=dropbox');
   } catch (err) {
     next(err);
   }

@@ -27,6 +27,7 @@ const Files = () => {
   const fileInputRef = useRef(null)
   const [dragActive, setDragActive] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState([])
+  const [storageInfo, setStorageInfo] = useState(null)
   const [orphanedInfo, setOrphanedInfo] = useState(null)
   
   const { 
@@ -44,9 +45,20 @@ const Files = () => {
     dispatch(fetchFiles())
     // Check for orphaned files
     checkOrphanedFiles()
+    // Fetch storage info
+    fetchStorageInfo()
   }, [dispatch])
 
+  const fetchStorageInfo = async () => {
+    try {
+      const response = await filesAPI.getStorageInfo() // Assuming you have a getStorageInfo API
+      setStorageInfo(response.data)
+    } catch (error) {
+      console.error('Failed to fetch storage info:', error)
+    }
+  }
   const checkOrphanedFiles = async () => {
+
     try {
       const response = await filesAPI.getOrphanedFiles()
       setOrphanedInfo(response.data)
@@ -74,6 +86,12 @@ const Files = () => {
   }
 
   const handleFileSelect = (e) => {
+    if (!storageInfo) {
+      return // or show a message that storage info is loading
+    }
+
+    //New Addition
+
     const files = Array.from(e.target.files)
     if (files.length > 0) {
       handleUpload(files[0])
@@ -81,6 +99,15 @@ const Files = () => {
   }
 
   const handleUpload = async (file) => {
+    if (storageInfo && file.size > storageInfo.available) {
+      // Display an error message
+      dispatch({
+        type: 'files/setError', // Assuming you have a setError action
+        payload: 'Not enough storage space. Please free up space or upload a smaller file.'
+      })
+      return
+    }
+
     try {
       await dispatch(uploadFile({
         file,
@@ -187,6 +214,21 @@ const Files = () => {
         </div>
       )}
 
+      {storageInfo && (
+        <div className="mb-6 rounded-md bg-blue-50 p-4">
+          <div className="flex">
+            <AlertCircle className="h-5 w-5 text-blue-400" />
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-blue-800">Storage Information</h3>
+              <p className="mt-1 text-sm text-blue-700">
+                Total: {formatFileSize(storageInfo.total)} | Available: {formatFileSize(storageInfo.available)}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       
 
       {/* Upload Area */}
@@ -219,7 +261,7 @@ const Files = () => {
               />
             </label>
             <p className="mt-1 text-xs text-gray-500">
-              Any file type up to 10MB
+              Any file type
             </p>
           </div>
           

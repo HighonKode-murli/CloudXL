@@ -18,13 +18,14 @@ export const uploadFile = createAsyncThunk(
   'files/uploadFile',
   async ({ file, onProgress }, { rejectWithValue, dispatch }) => {
     try {
+      dispatch(setUploadProgress(0))
       const response = await filesAPI.uploadFile(file, (progress) => {
         dispatch(setUploadProgress(progress))
         if (onProgress) onProgress(progress)
       })
       return response.data
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to upload file')
+      return rejectWithValue(error || 'Failed to upload file')
     }
   }
 )

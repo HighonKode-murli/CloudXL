@@ -7,6 +7,7 @@ import {
   uploadSplitAcrossProviders,
   downloadAndMerge,
   deleteAllParts,
+  getStorageInfoBefore,
 } from "../services/storageManager.js";
 
 const router = express.Router();
@@ -249,5 +250,44 @@ router.get("/orphaned/list", requireAuth, async (req, res, next) => {
     next(e);
   }
 });
+
+// GET storage usage summary
+router.get("/storage/info", requireAuth, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    let total = 0;
+    let available = 0;
+
+    // Iterate over each linked cloud account and fetch storage info
+    for (const account of user.cloudAccounts) {
+      try {
+        // Assuming you have a function to get storage info for each provider
+        // This function should return an object with `total` and `available` properties in bytes
+        const storageInfo = await getStorageInfoBefore(account);
+
+        total += storageInfo.total;
+        available += storageInfo.available;
+      } catch (error) {
+        console.error(`Failed to fetch storage info for ${account.provider}:${account.accountEmail}:`, error);
+        // Optionally, you might want to handle this error differently, e.g., by skipping the account
+        // or returning a specific error message to the client.
+      }
+    }
+
+    res.json({
+      total,
+      available,
+    });
+  } catch (e) {
+    console.error('Storage info error:', e);
+    next(e);
+  }
+});
+
+
 
 export default router

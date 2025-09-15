@@ -23,7 +23,7 @@ export function getLinkedAccountsByProvider(user) {
   return byProv;
 }
 
-async function providerAvailableBytes(account) {
+export async function providerAvailableBytes(account) {
   if (account.provider === PROVIDERS.GOOGLE)
     return (await getQuotaGoogle(account)).available;
   if (account.provider === PROVIDERS.DROPBOX)
@@ -31,27 +31,36 @@ async function providerAvailableBytes(account) {
   return 0;
 }
 
+export async function getStorageInfoBefore(account){
+  if (account.provider === PROVIDERS.GOOGLE)
+    return await getQuotaGoogle(account);
+  if (account.provider === PROVIDERS.DROPBOX)
+    return await getQuotaDropbox(account);
+}
+
 export async function chooseTargetsForSize(user, totalSize) {
   const accounts = [...user.cloudAccounts];
   if (accounts.length === 0) throw new Error("No cloud accounts linked");
 
   const slots = [];
+  let totalAvailable = 0;
   for (const acc of accounts) {
     await ensureAccessToken(acc);
     const avail = await providerAvailableBytes(acc).catch(() => 0);
+    totalAvailable += avail;
     slots.push({ acc, avail });
   }
-
+ 
+  
   slots.sort((a, b) => b.avail - a.avail);
 
-  const CHUNK = Number(process.env.CHUNK_SIZE_BYTES);
+  const CHUNK = Number(Math.min(slots[slots.length-1].avail,Math.max(totalSize/5,104857600)));  //100MB is the min chunk size
   let remaining = totalSize;
   const plan = [];
   let order = 0;
 
   while (remaining > 0) {
-    const slot = slots.find((s) => s.avail > 0) || slots[0];
-    // Use full chunk size or remaining bytes, don't limit by available space for simplicity
+    const slot = slots.find((s) => s.avail >= CHUNK) || slots[0];
     const take = Math.min(CHUNK, remaining);
     plan.push({ account: slot.acc, bytes: take, order: order++ });
     slot.avail = Math.max(0, slot.avail - take);
@@ -65,8 +74,15 @@ export async function uploadSplitAcrossProviders(user, file) {
   const total = buffer.length;
   console.log(`Uploading file: ${originalname}, size: ${total} bytes, type: ${mimetype}`);
 
-  const plan = await chooseTargetsForSize(user, total);
-  console.log(`Upload plan created with ${plan.length} chunks`);
+  let plan;
+  try{
+    plan = await chooseTargetsForSize(user, total);
+    console.log(`Upload plan created with ${plan.length} chunks`);
+  }catch(err){
+    console.log('Error creating upload plan');
+    throw err;
+  }
+  
 
   let offset = 0;
   const parts = [];

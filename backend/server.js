@@ -19,13 +19,14 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     secure: false, // Set to true in production with HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 72 * 60 * 60 * 1000 // 72 hours
   }
 }))
 
 // Enable CORS for all routes
 app.use(cors({
-  origin: 'https://cloud-xl.vercel.app', // Your frontend URL
+  // origin: 'https://cloud-xl.vercel.app', // Your frontend URL
+  origin: 'http://localhost:5173', // Your frontend URL
   credentials: true
 }))
 

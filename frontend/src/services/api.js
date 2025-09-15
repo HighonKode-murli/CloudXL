@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'https://cloudxl.onrender.com'
+// const API_BASE_URL = 'https://cloudxl.onrender.com'
+const API_BASE_URL = 'http://localhost:5000'
 
 // Create axios instance
 const api = axios.create({
@@ -114,6 +115,7 @@ export const filesAPI = {
   },
   deleteFile: (fileId) => api.delete(`/files/${fileId}`),
   getOrphanedFiles: () => api.get('/files/orphaned/list'),
+  getStorageInfo: () => api.get('/files/storage/info'),
 }
 
 export default api

@@ -17,9 +17,9 @@ const InvitationNotifications = () => {
   useEffect(() => {
     const loadInvitations = async () => {
       try {
-        const result = await dispatch(fetchPendingInvitations()).unwrap()
-        console.log('Pending invitations:', result)
+        await dispatch(fetchPendingInvitations()).unwrap()
       } catch (error) {
+        // Silently handle errors - don't show error toast for invitations
         console.error('Failed to fetch invitations:', error)
       }
     }
@@ -52,15 +52,10 @@ const InvitationNotifications = () => {
     }
   }
 
-  console.log('Rendering notifications, count:', pendingInvitations?.length || 0)
-
   return (
     <div className="relative">
       <button
-        onClick={() => {
-          console.log('Bell clicked, invitations:', pendingInvitations)
-          setShowDropdown(!showDropdown)
-        }}
+        onClick={() => setShowDropdown(!showDropdown)}
         className="relative p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-full"
       >
         <Bell className="h-6 w-6" />

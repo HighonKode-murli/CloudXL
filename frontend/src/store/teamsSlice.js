@@ -221,16 +221,14 @@ const teamsSlice = createSlice({
       })
       // Fetch pending invitations
       .addCase(fetchPendingInvitations.pending, (state) => {
-        state.loading = true
-        state.error = null
+        // Don't set loading state for background invitation fetching
       })
       .addCase(fetchPendingInvitations.fulfilled, (state, action) => {
-        state.loading = false
-        state.pendingInvitations = action.payload.invitations
+        state.pendingInvitations = action.payload.invitations || []
       })
       .addCase(fetchPendingInvitations.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.payload
+        // Silently fail - don't show errors for background invitation fetching
+        state.pendingInvitations = []
       })
       // Accept invitation
       .addCase(acceptInvitation.pending, (state) => {

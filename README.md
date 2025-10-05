@@ -1,10 +1,10 @@
 # 🌩️ CloudXL — One Cloud to Rule Them All  
 
-CloudXL is a full-stack app that lets you escape the limits of “just 15 GB” by pooling together multiple free cloud storage accounts (Google Drive, Dropbox).
+CloudXL is a full-stack enterprise storage platform that lets you escape the limits of "just 15 GB" by pooling together multiple free cloud storage accounts (Google Drive, Dropbox).
 
 When you upload a file, CloudXL automatically splits it into chunks and distributes those parts across your linked cloud accounts. On download, it seamlessly pulls the pieces back together — like magic. ✨
 
-Think of it as a super-cloud built from all your free storage scattered across the internet.
+Now with **Team Collaboration** — create teams, invite members, manage role-based access, and share files across different team profiles (editors, content-writers, tech-devs). Perfect for distributed teams managing content and projects!
 
 A **super-cloud** powered by all your free space. 🚀  
 
@@ -14,17 +14,26 @@ A **super-cloud** powered by all your free space. 🚀
 
 ### Backend
 - **Authentication**: JWT-based user authentication with secure password hashing
+- **Team Management**: Multi-tenant architecture with role-based access control (RBAC)
+- **Team Profiles**: Organize members into profiles (editors, content-writers, tech-devs, cross-section)
+- **Invitation System**: Email invitations with secure tokens and automated notifications
 - **File Management**: Upload, download, and delete files with automatic splitting/merging
+- **Profile-Based Sharing**: Share files to specific team profiles or cross-sections
 - **Cloud Integration**: OAuth integration with Google Drive and Dropbox
 - **Distributed Storage**: Files are split into chunks and distributed across connected providers
-- **Security**: Optional encryption of file chunks at rest
+- **Team Storage Pools**: Admins manage centralized cloud accounts for team usage
+- **Security**: Optional encryption of file chunks at rest, admin permissions, access control
 
 ### Frontend
 - **Modern React App**: Built with React 18, Vite, and Tailwind CSS
 - **Authentication System**: Login/signup with form validation and error handling
 - **Protected Routes**: Route protection with JWT token management
+- **Dual-Context Views**: Switch between personal and team file management
+- **Team Dashboard**: Create teams, manage members, invite users, assign profiles
+- **Admin Controls**: Team admin interface for member management and cloud account pooling
 - **Dashboard**: Cloud provider connection management and status display
-- **File Management**: Drag & drop upload, file listing, search, and download
+- **File Management**: Drag & drop upload, file listing, search, download with team context
+- **Profile Filtering**: View files based on team profile membership
 - **Responsive Design**: Mobile-friendly interface with accessibility features
 - **Error Handling**: Comprehensive error boundaries and user feedback
 - **Toast Notifications**: Real-time user feedback for actions
@@ -38,6 +47,7 @@ A **super-cloud** powered by all your free space. 🚀
 - Google APIs and Dropbox SDK
 - Multer for file uploads
 - bcrypt for password hashing
+- Nodemailer for email invitations
 
 ### Frontend
 - React 18 with Vite
@@ -55,110 +65,5 @@ A **super-cloud** powered by all your free space. 🚀
 - MongoDB database
 - Google Cloud Console project with Drive API enabled
 - Dropbox App with OAuth configured
+- SMTP credentials (Gmail, SendGrid, Mailgun, or AWS SES)
 
-### Backend Setup
-
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create a `.env` file with the following variables:
-   ```env
-   MONGODB_URI=your_mongodb_connection_string
-   JWT_SECRET_KEY=your_jwt_secret
-   PORT=5000
-   CHUNK_SIZE_BYTES=10485760
-   
-   # Google OAuth
-   GOOGLE_CLIENT_ID=your_google_client_id
-   GOOGLE_CLIENT_SECRET=your_google_client_secret
-   GOOGLE_REDIRECT_URI=http://localhost:5000/cloud/callback/google
-   
-   # Dropbox OAuth
-   DROPBOX_CLIENT_ID=your_dropbox_client_id
-   DROPBOX_CLIENT_SECRET=your_dropbox_client_secret
-   DROPBOX_REDIRECT_URI=http://localhost:5000/cloud/callback/dropbox
-   
-   # Optional encryption
-   ENABLE_ENCRYPTION=false
-   ENCRYPTION_SECRET=32byteshexstring000000000000000000
-   ```
-
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-### Frontend Setup
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Open your browser and navigate to `http://localhost:5173`
-
-## Usage
-
-1. **Sign Up**: Create a new account with email and password
-2. **Login**: Sign in to access the dashboard
-3. **Connect Cloud Providers**: Link your Google Drive and/or Dropbox accounts
-4. **Upload Files**: Use the Files page to upload files via drag & drop or file picker
-5. **Manage Files**: View, search, sort, download, and delete your files
-6. **Download Files**: Files are automatically reassembled from distributed chunks
-
-## API Endpoints
-
-### Authentication
-- `POST /auth/signup` - User registration
-- `POST /auth/login` - User login
-
-### Cloud Providers
-- `GET /cloud/status` - Get linked account status
-- `GET /cloud/connect/google` - Initiate Google OAuth
-- `GET /cloud/callback/google` - Handle Google OAuth callback
-- `GET /cloud/connect/dropbox` - Initiate Dropbox OAuth
-- `GET /cloud/callback/dropbox` - Handle Dropbox OAuth callback
-
-### Files
-- `POST /files/upload` - Upload file
-- `GET /files` - List user files
-- `GET /files/:fileId` - Download file
-- `DELETE /files/:fileId` - Delete file
-
-## Security Features
-
-- JWT token-based authentication
-- Password hashing with bcrypt
-- CORS protection
-- Input validation and sanitization
-- Optional file encryption at rest
-- Secure OAuth flows
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License.

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle } from 'lucide-react'
+import { Eye, EyeOff, UserPlus, AlertCircle, CheckCircle, Shield, User } from 'lucide-react'
 import { signupUser, clearError } from '../store/authSlice'
 import { isValidEmail, validatePassword } from '../utils/helpers'
 
@@ -38,7 +38,8 @@ const Signup = () => {
     try {
       await dispatch(signupUser({
         email: data.email,
-        password: data.password
+        password: data.password,
+        role: data.role
       })).unwrap()
       setSignupSuccess(true)
       setTimeout(() => {
@@ -123,6 +124,83 @@ const Signup = () => {
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                Account Type
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className={`relative flex cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                  watch('role') === 'user' 
+                    ? 'border-indigo-600 bg-indigo-50' 
+                    : 'border-gray-300 bg-white hover:border-gray-400'
+                }`}>
+                  <input
+                    {...register('role', { required: 'Please select an account type' })}
+                    type="radio"
+                    value="user"
+                    className="sr-only"
+                    defaultChecked
+                  />
+                  <span className="flex flex-1 flex-col">
+                    <User className={`h-5 w-5 mb-2 ${
+                      watch('role') === 'user' ? 'text-indigo-600' : 'text-gray-400'
+                    }`} />
+                    <span className={`block text-sm font-medium ${
+                      watch('role') === 'user' ? 'text-indigo-900' : 'text-gray-900'
+                    }`}>User</span>
+                    <span className="mt-1 text-xs text-gray-500">
+                      Standard account
+                    </span>
+                  </span>
+                  {watch('role') === 'user' && (
+                    <span className="absolute top-3 right-3">
+                      <div className="h-5 w-5 rounded-full bg-indigo-600 flex items-center justify-center">
+                        <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 12 12">
+                          <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
+                        </svg>
+                      </div>
+                    </span>
+                  )}
+                </label>
+
+                <label className={`relative flex cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                  watch('role') === 'admin' 
+                    ? 'border-indigo-600 bg-indigo-50' 
+                    : 'border-gray-300 bg-white hover:border-gray-400'
+                }`}>
+                  <input
+                    {...register('role', { required: 'Please select an account type' })}
+                    type="radio"
+                    value="admin"
+                    className="sr-only"
+                  />
+                  <span className="flex flex-1 flex-col">
+                    <Shield className={`h-5 w-5 mb-2 ${
+                      watch('role') === 'admin' ? 'text-indigo-600' : 'text-gray-400'
+                    }`} />
+                    <span className={`block text-sm font-medium ${
+                      watch('role') === 'admin' ? 'text-indigo-900' : 'text-gray-900'
+                    }`}>Admin</span>
+                    <span className="mt-1 text-xs text-gray-500">
+                      Can create teams
+                    </span>
+                  </span>
+                  {watch('role') === 'admin' && (
+                    <span className="absolute top-3 right-3">
+                      <div className="h-5 w-5 rounded-full bg-indigo-600 flex items-center justify-center">
+                        <svg className="h-3 w-3 text-white" fill="currentColor" viewBox="0 0 12 12">
+                          <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
+                        </svg>
+                      </div>
+                    </span>
+                  )}
+                </label>
+              </div>
+              {errors.role && (
+                <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
               )}
             </div>
 

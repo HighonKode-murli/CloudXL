@@ -14,6 +14,8 @@ const fileSchema = new mongoose.Schema({
     size : {type : Number, required : true},
     mimeType : {type : String, default : 'application/octet-stream'},
     parts : [filePartSchema],
+    teamId : {type : mongoose.Schema.Types.ObjectId, ref : 'Team'}, // null for personal files
+    targetProfiles : [String],
     createdAt : {type : Date,default : Date.now}
 })
 

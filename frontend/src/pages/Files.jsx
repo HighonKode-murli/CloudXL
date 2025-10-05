@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { useLocation } from 'react-router-dom'
 import { 
   Upload, 
   Search, 
@@ -8,27 +9,37 @@ import {
   Filter,
   AlertCircle,
   FileText,
-  Plus
+  Plus,
+  Users,
+  Share2
 } from 'lucide-react'
 import { 
   fetchFiles, 
   uploadFile, 
   deleteFile, 
+  shareFile,
   setSearchTerm, 
   setSortBy, 
   setSortOrder,
   clearError 
 } from '../store/filesSlice'
+import { fetchMyTeams } from '../store/teamsSlice'
 import { filesAPI } from '../services/api'
 import { formatFileSize, formatDate, getFileTypeIcon, downloadFile, debounce } from '../utils/helpers'
 
 const Files = () => {
   const dispatch = useDispatch()
+  const location = useLocation()
   const fileInputRef = useRef(null)
   const [dragActive, setDragActive] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState([])
   const [storageInfo, setStorageInfo] = useState(null)
   const [orphanedInfo, setOrphanedInfo] = useState(null)
+  const [selectedTeamId, setSelectedTeamId] = useState(null)
+  const [selectedProfiles, setSelectedProfiles] = useState([])
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [fileToShare, setFileToShare] = useState(null)
+  const [teamContext, setTeamContext] = useState(null) // Store team context from navigation
   
   const { 
     files, 
@@ -41,13 +52,37 @@ const Files = () => {
     sortOrder 
   } = useSelector((state) => state.files)
 
+  const { myTeams } = useSelector((state) => state.teams)
+
+  const profiles = ['editors', 'content-writers', 'tech-devs', 'cross-section']
+
+  // Handle navigation from Teams page
   useEffect(() => {
-    dispatch(fetchFiles())
+    if (location.state?.teamId) {
+      setSelectedTeamId(location.state.teamId)
+      setTeamContext({
+        teamId: location.state.teamId,
+        teamName: location.state.teamName,
+        memberProfile: location.state.memberProfile
+      })
+      // For members, auto-select their profile
+      if (location.state.memberProfile) {
+        setSelectedProfiles([location.state.memberProfile])
+      }
+    }
+  }, [location.state])
+
+  useEffect(() => {
+    dispatch(fetchMyTeams())
+  }, [dispatch])
+
+  useEffect(() => {
+    dispatch(fetchFiles(selectedTeamId))
     // Check for orphaned files
     checkOrphanedFiles()
     // Fetch storage info
     fetchStorageInfo()
-  }, [dispatch])
+  }, [dispatch, selectedTeamId])
 
   const fetchStorageInfo = async () => {
     try {
@@ -102,7 +137,7 @@ const Files = () => {
     if (storageInfo && file.size > storageInfo.available) {
       // Display an error message
       dispatch({
-        type: 'files/setError', // Assuming you have a setError action
+        type: 'files/setError',
         payload: 'Not enough storage space. Please free up space or upload a smaller file.'
       })
       return
@@ -111,18 +146,45 @@ const Files = () => {
     try {
       await dispatch(uploadFile({
         file,
+        teamId: selectedTeamId,
+        targetProfiles: selectedProfiles.length > 0 ? selectedProfiles : undefined,
         onProgress: (progress) => {
           console.log(`Upload progress: ${progress}%`)
         }
       })).unwrap()
       // Refresh files list after successful upload
-      dispatch(fetchFiles())
+      dispatch(fetchFiles(selectedTeamId))
       // Refresh orphaned files check
       checkOrphanedFiles()
     } catch (error) {
       console.error('Upload failed:', error)
       // Error is handled by the slice
     }
+  }
+
+  const handleShareFile = async () => {
+    if (!fileToShare || selectedProfiles.length === 0) return
+
+    try {
+      await dispatch(shareFile({
+        fileId: fileToShare._id,
+        targetProfiles: selectedProfiles
+      })).unwrap()
+      setShowShareModal(false)
+      setFileToShare(null)
+      setSelectedProfiles([])
+      dispatch(fetchFiles(selectedTeamId))
+    } catch (error) {
+      console.error('Failed to share file:', error)
+    }
+  }
+
+  const toggleProfile = (profile) => {
+    setSelectedProfiles(prev =>
+      prev.includes(profile)
+        ? prev.filter(p => p !== profile)
+        : [...prev, profile]
+    )
   }
 
   const handleDownload = async (file) => {
@@ -228,8 +290,84 @@ const Files = () => {
         </div>
       )}
 
+      {/* Team Context Banner */}
+      {teamContext && (
+        <div className="mb-6 rounded-md bg-indigo-50 p-4 border border-indigo-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Users className="h-5 w-5 text-indigo-600 mr-2" />
+              <div>
+                <h3 className="text-sm font-medium text-indigo-900">
+                  Viewing Team Files: {teamContext.teamName}
+                </h3>
+                {teamContext.memberProfile && (
+                  <p className="text-xs text-indigo-700 mt-1">
+                    Your Profile: <span className="font-semibold">{teamContext.memberProfile}</span>
+                    {' • '}Files will be uploaded with this profile
+                  </p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                setTeamContext(null)
+                setSelectedTeamId(null)
+                setSelectedProfiles([])
+              }}
+              className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+            >
+              View Personal Files
+            </button>
+          </div>
+        </div>
+      )}
 
-      
+      {/* Team and Profile Selector */}
+      <div className="mb-6 bg-white p-4 rounded-lg shadow">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Users className="inline h-4 w-4 mr-1" />
+              Upload Context
+            </label>
+            <select
+              value={selectedTeamId || ''}
+              onChange={(e) => setSelectedTeamId(e.target.value || null)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="">Personal Files</option>
+              {myTeams.adminOf.map((team) => (
+                <option key={team._id} value={team._id}>
+                  {team.name} (Admin)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {selectedTeamId && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Target Profiles (optional)
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {profiles.map((profile) => (
+                  <button
+                    key={profile}
+                    onClick={() => toggleProfile(profile)}
+                    className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                      selectedProfiles.includes(profile)
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {profile}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Upload Area */}
       <div

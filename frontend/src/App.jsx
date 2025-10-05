@@ -4,6 +4,8 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Files from './pages/Files'
+import Teams from './pages/Teams'
+import JoinTeam from './pages/JoinTeam'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 
@@ -28,7 +30,12 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="files" element={<Files />} />
+          <Route path="teams" element={<Teams />} />
         </Route>
+
+        {/* Team join routes (protected but outside layout) */}
+        <Route path="/teams/join/:token" element={<ProtectedRoute><JoinTeam /></ProtectedRoute>} />
+        <Route path="/teams/join" element={<ProtectedRoute><JoinTeam /></ProtectedRoute>} />
 
         {/* Catch all route */}
         <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />

@@ -5,6 +5,7 @@ import connectToDB from './config/mongodb.js'
 import authRoutes from './routes/auth-routes.js'
 import cloudRoutes from './routes/cloud.js'
 import fileRoutes from './routes/files.js'
+import teamRoutes from './routes/teams.js'
 import cors from 'cors'
 import errorHandler from './middleware/error.js'
 const app = express()
@@ -37,6 +38,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/auth',authRoutes)
 app.use('/cloud',cloudRoutes)
 app.use('/files',fileRoutes)
+app.use('/teams',teamRoutes)
 
 app.use(errorHandler)
 

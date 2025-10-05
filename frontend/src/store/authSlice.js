@@ -17,9 +17,9 @@ export const loginUser = createAsyncThunk(
 
 export const signupUser = createAsyncThunk(
   'auth/signup',
-  async ({ email, password }, { rejectWithValue }) => {
+  async ({ email, password, role }, { rejectWithValue }) => {
     try {
-      const response = await authAPI.signup(email, password)
+      const response = await authAPI.signup(email, password, role)
       return response.data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Signup failed')

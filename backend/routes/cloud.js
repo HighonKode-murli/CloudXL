@@ -168,30 +168,79 @@ router.get("/callback/dropbox", requireAuthFromSession, async (req, res, next) =
 
 
 // Get storage statistics for all connected providers
+// Get storage statistics for personal or team cloud accounts
 router.get('/storage/stats', requireAuth, async (req, res, next) => {
   try {
-    const user = await User.findById(req.user._id)
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' })
+    const { teamId } = req.query;
+
+    let cloudAccounts;
+    let contextInfo;
+
+    if (teamId) {
+      // ═══════════════════════════════════════════════════════════════
+      // TEAM STORAGE STATS
+      // ═══════════════════════════════════════════════════════════════
+      
+      const team = await Team.findById(teamId);
+      if (!team) {
+        return res.status(404).json({ error: 'Team not found' });
+      }
+
+      // Verify user is a member or admin of this team
+      const membership = await TeamMember.findOne({ 
+        teamId, 
+        userId: req.user._id 
+      });
+      const isAdmin = team.adminId.toString() === req.user._id.toString();
+
+      if (!membership && !isAdmin) {
+        return res.status(403).json({ error: 'Not a member of this team' });
+      }
+
+      cloudAccounts = team.cloudAccounts;
+      contextInfo = {
+        context: 'team',
+        teamId: team._id,
+        teamName: team.name,
+        isAdmin
+      };
+
+    } else {
+      // ═══════════════════════════════════════════════════════════════
+      // PERSONAL STORAGE STATS (EXISTING LOGIC)
+      // ═══════════════════════════════════════════════════════════════
+      
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+
+      cloudAccounts = user.cloudAccounts;
+      contextInfo = {
+        context: 'personal',
+        userId: user._id
+      };
     }
 
+    // Common storage calculation logic for both contexts
     const storageStats = {
       totalAvailable: 0,
       totalUsed: 0,
+      totalCapacity: 0,
       providers: []
-    }
+    };
 
     // Get storage info for each connected account
-    for (const account of user.cloudAccounts) {
+    for (const account of cloudAccounts) {
       try {
-        await ensureAccessToken(account)
+        await ensureAccessToken(account);
 
-        let quota = { available: 0, used: 0, total: 0 }
+        let quota = { available: 0, used: 0, total: 0 };
 
         if (account.provider === PROVIDERS.GOOGLE) {
-          quota = await getQuotaGoogle(account)
+          quota = await getQuotaGoogle(account);
         } else if (account.provider === PROVIDERS.DROPBOX) {
-          quota = await getQuotaDropbox(account)
+          quota = await getQuotaDropbox(account);
         }
 
         const providerStats = {
@@ -201,14 +250,15 @@ router.get('/storage/stats', requireAuth, async (req, res, next) => {
           used: quota.used || 0,
           total: quota.total || (quota.available + quota.used) || 0,
           expiresAt: account.expiresAt
-        }
+        };
 
-        storageStats.providers.push(providerStats)
-        storageStats.totalAvailable += providerStats.available
-        storageStats.totalUsed += providerStats.used
+        storageStats.providers.push(providerStats);
+        storageStats.totalAvailable += providerStats.available;
+        storageStats.totalUsed += providerStats.used;
+        storageStats.totalCapacity += providerStats.total;
 
       } catch (error) {
-        console.error(`Failed to get quota for ${account.provider} (${account.accountEmail}):`, error)
+        console.error(`Failed to get quota for ${account.provider} (${account.accountEmail}):`, error);
         // Add provider with error status
         storageStats.providers.push({
           provider: account.provider,
@@ -218,22 +268,27 @@ router.get('/storage/stats', requireAuth, async (req, res, next) => {
           total: 0,
           error: 'Failed to fetch quota',
           expiresAt: account.expiresAt
-        })
+        });
       }
     }
 
-    console.log(`Storage stats for user ${user._id}:`, {
+    console.log(`Storage stats for ${contextInfo.context}:`, {
       totalAvailable: storageStats.totalAvailable,
       totalUsed: storageStats.totalUsed,
       providerCount: storageStats.providers.length
-    })
+    });
 
-    res.json(storageStats)
+    res.json({
+      ...contextInfo,
+      ...storageStats
+    });
+
   } catch (error) {
-    console.error('Storage stats error:', error)
-    next(error)
+    console.error('Storage stats error:', error);
+    next(error);
   }
-})
+});
+
 
 // Check impact of disconnecting a specific account
 router.get('/disconnect-impact/:provider/:accountEmail', requireAuth, async (req, res, next) => {

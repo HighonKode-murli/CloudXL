@@ -40,7 +40,7 @@ api.interceptors.response.use(
 // Auth API
 export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
-  signup: (email, password) => api.post('/auth/signup', { email, password }),
+  signup: (email, password, role) => api.post('/auth/signup', { email, password, role }),
 }
 
 // Cloud API
@@ -92,12 +92,34 @@ export const cloudAPI = {
   getDisconnectImpact: (provider, accountEmail) => api.get(`/cloud/disconnect-impact/${provider}/${encodeURIComponent(accountEmail)}`),
 }
 
+// Teams API
+export const teamsAPI = {
+  createTeam: (teamData) => api.post('/teams', teamData),
+  getMyTeams: () => api.get('/teams/my-teams'),
+  inviteToTeam: (teamId, email, profile) => api.post(`/teams/${teamId}/invite`, { email, profile }),
+  joinTeam: (token) => api.post(`/teams/join/${token}`),
+  getTeamMembers: (teamId) => api.get(`/teams/${teamId}/members`),
+  removeTeamMember: (teamId, userId) => api.delete(`/teams/${teamId}/members/${userId}`),
+  getPendingInvitations: () => api.get('/teams/invitations/pending'),
+  acceptInvitation: (invitationId) => api.post(`/teams/invitations/${invitationId}/accept`),
+  rejectInvitation: (invitationId) => api.post(`/teams/invitations/${invitationId}/reject`),
+}
+
 // Files API
 export const filesAPI = {
-  getFiles: () => api.get('/files'),
-  uploadFile: (file, onUploadProgress) => {
+  getFiles: (teamId) => {
+    const params = teamId ? { teamId } : {}
+    return api.get('/files', { params })
+  },
+  uploadFile: (file, onUploadProgress, teamId, targetProfiles) => {
     const formData = new FormData()
     formData.append('file', file)
+    if (teamId) {
+      formData.append('teamId', teamId)
+    }
+    if (targetProfiles && targetProfiles.length > 0) {
+      formData.append('targetProfiles', JSON.stringify(targetProfiles))
+    }
     return api.post('/files/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -108,6 +130,7 @@ export const filesAPI = {
       } : undefined,
     })
   },
+  shareFile: (fileId, targetProfiles) => api.post(`/files/${fileId}/share`, { targetProfiles }),
   downloadFile: (fileId) => {
     return api.get(`/files/${fileId}`, {
       responseType: 'blob',

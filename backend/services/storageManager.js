@@ -179,3 +179,87 @@ export async function deleteAllParts(user, fileDoc) {
     } catch {}
   }
 }
+
+
+export async function uploadSplitAcrossProvidersTeam(team, user, file, targetProfiles) {
+  // Use team's cloud accounts instead of user's personal accounts
+  const { buffer, originalname, mimetype } = file;
+  const total = buffer.length;
+  
+  if (team.cloudAccounts.length === 0) {
+    throw new Error("Team has no linked cloud accounts");
+  }
+  
+  // Use team.cloudAccounts instead of user.cloudAccounts
+  const plan = await chooseTargetsForSizeTeam(team, total);
+  
+  // Same chunking logic but using team accounts
+  let offset = 0;
+  const parts = [];
+  
+  for (const p of plan) {
+    const slice = buffer.subarray(offset, offset + p.bytes);
+    offset += p.bytes;
+    
+    const { buf } = maybeEncrypt(slice);
+    const timestamp = Date.now();
+    const name = `team_${team._id}_${timestamp}_${originalname}.part${String(p.order).padStart(6, "0")}`;
+    
+    // Upload using team account
+    let uploaded;
+    if (p.account.provider === PROVIDERS.GOOGLE) {
+      uploaded = await uploadChunkGoogle(p.account, {
+        chunkBuffer: buf,
+        name,
+        mimeType: mimetype,
+      });
+    } else if (p.account.provider === PROVIDERS.DROPBOX) {
+      uploaded = await uploadChunkDropbox(p.account, {
+        chunkBuffer: buf,
+        name,
+      });
+    }
+    
+    parts.push({
+      provider: p.account.provider,
+      accountEmail: p.account.accountEmail,
+      remoteId: uploaded.remoteId,
+      size: uploaded.size || buf.length,
+      order: p.order,
+    });
+  }
+  
+  return { parts, totalSize: total, mimeType: mimetype };
+}
+
+
+
+async function chooseTargetsForSizeTeam(team, totalSize) {
+  const accounts = [...team.cloudAccounts];
+  if (accounts.length === 0) throw new Error("No cloud accounts linked to team");
+  
+  // Same logic as original but using team accounts
+  const slots = [];
+  for (const acc of accounts) {
+    await ensureAccessToken(acc);
+    const avail = await providerAvailableBytes(acc).catch(() => 0);
+    slots.push({ acc, avail });
+  }
+  
+  
+  slots.sort((a, b) => b.avail - a.avail);
+
+  const CHUNK = Number(Math.min(slots[slots.length-1].avail,Math.max(totalSize/5,104857600)));  //100MB is the min chunk size
+  let remaining = totalSize;
+  const plan = [];
+  let order = 0;
+
+  while (remaining > 0) {
+    const slot = slots.find((s) => s.avail >= CHUNK) || slots[0];
+    const take = Math.min(CHUNK, remaining);
+    plan.push({ account: slot.acc, bytes: take, order: order++ });
+    slot.avail = Math.max(0, slot.avail - take);
+    remaining -= take;
+  }
+  return plan;
+}

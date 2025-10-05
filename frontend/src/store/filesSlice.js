@@ -4,9 +4,9 @@ import { filesAPI } from '../services/api'
 // Async thunks
 export const fetchFiles = createAsyncThunk(
   'files/fetchFiles',
-  async (_, { rejectWithValue }) => {
+  async (teamId, { rejectWithValue }) => {
     try {
-      const response = await filesAPI.getFiles()
+      const response = await filesAPI.getFiles(teamId)
       return response.data
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch files')
@@ -16,16 +16,28 @@ export const fetchFiles = createAsyncThunk(
 
 export const uploadFile = createAsyncThunk(
   'files/uploadFile',
-  async ({ file, onProgress }, { rejectWithValue, dispatch }) => {
+  async ({ file, onProgress, teamId, targetProfiles }, { rejectWithValue, dispatch }) => {
     try {
       dispatch(setUploadProgress(0))
       const response = await filesAPI.uploadFile(file, (progress) => {
         dispatch(setUploadProgress(progress))
         if (onProgress) onProgress(progress)
-      })
+      }, teamId, targetProfiles)
       return response.data
     } catch (error) {
       return rejectWithValue(error || 'Failed to upload file')
+    }
+  }
+)
+
+export const shareFile = createAsyncThunk(
+  'files/shareFile',
+  async ({ fileId, targetProfiles }, { rejectWithValue }) => {
+    try {
+      const response = await filesAPI.shareFile(fileId, targetProfiles)
+      return response.data
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to share file')
     }
   }
 )

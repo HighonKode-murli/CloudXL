@@ -17,7 +17,7 @@ export default async function requireAuth(req, res, next) {
     const user = await User.findById(payload.userId);
     if (!user) return res.status(401).json({ error: 'Invalid user' });
 
-    req.user = { _id: user._id };
+    req.user = { _id: user._id, role: user.role, email: user.email };
     next();
   } catch (error) {
     console.error('Auth error:', error);

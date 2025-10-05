@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 
 export async function Signup(req,res){
     try{
-        const {email,password} = req.body
+        const {email,password,role} = req.body
         if(!email || !password) return res.status(400).json({error : 'email/password/username required'})
         const isUserExits = await User.findOne({email})
         if(isUserExits){
@@ -19,6 +19,7 @@ export async function Signup(req,res){
         await User.create({
             email,
             passwordHash : hashedPass,
+            role,
             cloudAccounts : []
         })
 

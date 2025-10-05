@@ -3,6 +3,7 @@ import authSlice from './authSlice'
 import cloudSlice from './cloudSlice'
 import filesSlice from './filesSlice'
 import storageSlice from './storageSlice'
+import teamsSlice from './teamsSlice'
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     cloud: cloudSlice,
     files: filesSlice,
     storage: storageSlice,
+    teams: teamsSlice,
   },
 })
 
